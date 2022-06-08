@@ -1,6 +1,5 @@
-import copy
-import io
 import inspect
+import io
 import sys
 import typing as t
 
@@ -8,8 +7,8 @@ from dominion.base.action import Reaction
 
 from .base import Card, CardTypes, Copper, Curse, Duchy, Estate, Gold, Province, Silver
 from .deck import Deck
-from .player import Player, PlayerTypes
 from .event import Event
+from .player import Player, PlayerTypes
 
 
 class Game:
@@ -17,22 +16,24 @@ class Game:
     kingdom_cards: t.Dict[t.Type[Card], int]
     base_cards: t.Dict[t.Type[Card], int]
     players: t.List[Player]
-    gamelog: io.FileIO
+    game_output: io.FileIO
 
     def __init__(
         self,
         players: PlayerTypes,
         kingdom_card_set: CardTypes,
-        gamelog: io.FileIO = sys.stdout,
+        game_output: io.FileIO = sys.stdout,
     ):
-        self.gamelog = gamelog
-        self.players = [player(Deck(self)) for player in players]
+        self.game_output = game_output
         self.trash_pile = []
         self.kingdom_cards = {card: card.setup(players) for card in kingdom_card_set}
         self.base_cards = {
             card: card.setup(players)
             for card in [Copper, Silver, Gold, Estate, Duchy, Province, Curse]
         }
+        self.raw_log("The Supply is setup!")
+        self.players = [player(Deck(self)) for player in players]
+        self.raw_log("The players have been dealt!")
 
     @property
     def available_cards(self) -> t.List[t.Type[Card]]:
@@ -67,6 +68,7 @@ class Game:
             Event.ATTACK_EVENT: card.when_attack,
             Event.REVEAL_EVENT: card.when_reveal,
         }
+        self.log(player.deck, f"[{event.name}] {args} {kwargs}")
         if not inspect.isabstract(reaction_events[event]):
             if player.choice(
                 f"Activate your {card.name} to the {card.name}?",
@@ -81,7 +83,10 @@ class Game:
                     self.call_reaction_effect(player, hand_card, event, *args, **kwargs)
 
     def log(self, deck: Deck, message: str) -> None:
-        print(f"[{self.get_player(deck).player_id}] {message}", file=self.gamelog)
+        self.raw_log(f"[{self.get_player(deck).player_id}] {message}")
+
+    def raw_log(self, message: str):
+        print(message, file=self.game_output)
 
     @property
     def ended(self) -> bool:
