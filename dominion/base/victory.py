@@ -1,8 +1,7 @@
 # pylint: disable=unused-argument
 import typing as t
 
-from .card import Card, BaseCard, KingdomCard
-
+from .card import BaseCard, Card, KingdomCard
 
 if t.TYPE_CHECKING:
     from ..deck import Deck

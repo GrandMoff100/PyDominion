@@ -1,6 +1,7 @@
-from .game import Game
-from .player import Player
 from .base import *
+from .deck import Deck
+from .game import Game
+from .player import Human, Player
 
 __all__ = (
     "Game",
@@ -15,6 +16,5 @@ __all__ = (
     "Estate",
     "Duchy",
     "Province",
-    "Gardens",
     "Curse",
 )

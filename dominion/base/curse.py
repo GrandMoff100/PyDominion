@@ -5,13 +5,18 @@ from .card import BaseCard
 
 if t.TYPE_CHECKING:
     from ..player import PlayerTypes
+    from ..deck import Deck
 else:
     PlayerTypes = None  # pylint: disable=invalid-name
+    Deck = None  # pylint: disable=invalid-name
 
 
 class Curse(BaseCard):
     name: str = "Curse"
-    points: int = -1
+
+    @classmethod
+    def points(cls, deck: Deck) -> int:  # pylint: disable=unused-argument
+        return -1
 
     @classmethod
     def setup(cls, players: PlayerTypes) -> int:

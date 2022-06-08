@@ -1,9 +1,37 @@
 """Module defining the Kingdom Cards for Dominion (First Edition)"""
 import typing as t
 
-from ..base import Action, Card, Victory, KingdomCard, Reaction
+from ..base import Action, Attack, Card, KingdomCard, Reaction, Silver, Victory
 from ..deck import Deck
-from ..player import PlayerTypes
+from ..player import Player, PlayerTypes
+
+__all__ = (
+    "Cellar",
+    "Chapel",
+    "Moat",
+    "Chancellor",
+    "Village",
+    "Woodcutter",
+    "Workshop",
+    "Bureaucrat",
+    "Gardens",
+    "Militia",
+    "Moneylender",
+    "Feast",
+    "Remodel",
+    "Smithy",
+    "Spy",
+    "Thief",
+    "ThroneRoom",
+    "CouncilRoom",
+    "Festival",
+    "Laboratory",
+    "Library",
+    "Market",
+    "Mine",
+    "Witch",
+    "Adventurer",
+)
 
 
 class Cellar(Action):
@@ -12,7 +40,10 @@ class Cellar(Action):
 
     @classmethod
     def effect(cls, deck: Deck, cards: t.List[Card]) -> None:
-        "+1 Action, Discard any number of cards, then draw that many."
+        """
+        +1 Action
+        Discard any number of cards, then draw that many.
+        """
         deck.actions += 1
         deck.discard(cards)
         deck.draw(len(cards))
@@ -24,7 +55,7 @@ class Chapel(Action):
 
     @classmethod
     def effect(cls, deck: Deck, cards: t.List[Card]) -> None:
-        "Trash up to 4 cards from your hand"
+        """Trash up to 4 cards from your hand"""
         if len(cards) <= 4:
             for card in cards:
                 if card in deck.hand:
@@ -43,25 +74,42 @@ class Moat(Reaction):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        "+2 Cards"
+        """
+        +2 Cards
+        """
         deck.draw(2)
 
     @classmethod
     def when_attack(cls, deck: Deck, card: t.Type[Card], targets: PlayerTypes) -> None:
-        "When another player plays an Attack card, you can first reveal this card and then be unaffected by it."
-        player = deck.game.player_lookup(deck)
+        """
+        When another player plays an Attack card,
+        you can first reveal this card and then be unaffected by it.
+        """
+        player = deck.game.get_player(deck)
         if player.reveal(cls):
             targets.remove(player)
 
 
-class Chancellor:
+class Chancellor(Action):
     name: str = "Chancellor"
     cost: int = 3
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        "+2 Coins, You may immediately put your deck in the discard pile."
+        """
+        +2 Coins
+        You may immediately put your deck in the discard pile.
+        """
         deck.coins += 2
+        if (
+            deck.game.get_player(deck).choice(
+                "You may immediately put your deck in the discard pile:",
+                ["Yes", "No"],
+            )
+            == "Yes"
+        ):
+            deck.discard_pile += deck.draw_pile
+            deck.draw_pile = []
 
 
 class Village(Action):
@@ -70,27 +118,58 @@ class Village(Action):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        "+1 Card, +2 Actions"
+        """
+        +1 Card
+        +2 Actions
+        """
         deck.draw()
         deck.actions += 2
 
 
-class Woodcutter:
+class Woodcutter(Action):
+    name: str = "Woodcutter"
+    cost: int = 3
+
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        "+1 Buy, +2 Coins"
+        """
+        +1 Buy
+        +2 Coins
+        """
         deck.buys += 1
         deck.coins += 2
 
 
-class Workshop:
+class Workshop(Action):
+    name: str = "Workshop"
+    cost: int = 3
+
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        "Gain a card costing up to four coins."
+        """Gain a card costing up to four coins."""
+        deck.game.get_player(deck).choice(
+            "Gain a card costing up to four coins:",
+            [card for card in deck.game.available_cards if card.cost <= 4],
+        )
 
 
-class Bureaucrat:
-    pass
+class Bureaucrat(Attack):
+    name: str = "Bureaucrat"
+    cost: int = 4
+
+    @classmethod
+    def effect(cls, deck: Deck) -> None:
+        """
+        Gain a Silver onto your deck.
+        Each other player reveals a Victory card from their hand and
+        puts it onto their deck (or reveals a hand with no Victory cards).
+        """
+        deck.draw_pile.insert(0, Silver)
+        for player in deck.game.players:
+            for card in player.deck.hand:
+                if issubclass(card, Victory):
+                    player.deck.insert(0, card)
+                    break
 
 
 class Gardens(Victory, KingdomCard):
@@ -99,68 +178,161 @@ class Gardens(Victory, KingdomCard):
 
     @classmethod
     def points(cls, deck: Deck) -> int:
+        """Worth 1 Victory Point for every 10 cards in your deck (rounded down)."""
         return len(deck.cards) // 10
 
 
-class Militia:
-    pass
+class Militia(Attack):
+    name: str = "Militia"
+    cost: int = 4
+
+    @classmethod
+    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:
+        """
+        +2 Coins
+        Each other player discards down to 3 cards in their hand.
+        """
+        deck.coins += 2
+        for player in targets:
+            for _ in range(max([3, len(player.deck.hand)]) - 3):
+                player.deck.discard(
+                    player.choice(
+                        "Choose one card from your hand to discard",
+                        player.deck.hand,
+                    )
+                )
 
 
-class Moneylender:
-    pass
+class Moneylender(Action):
+    name: str = "Moneylender"
+    cost: int = 4
+
+    @classmethod
+    def effect(cls, deck: Deck) -> None:
+        pass
 
 
-class Feast:
-    pass
+class Feast(Action):
+    name: str = "Feast"
+    cost: int = 4
+
+    @classmethod
+    def effect(cls, deck: Deck) -> None:
+        pass
 
 
-class Remodel:
-    pass
+class Remodel(Action):
+    name: str = "Remodel"
+    cost: int = 4
+
+    @classmethod
+    def effect(cls, deck: Deck) -> None:
+        pass
 
 
-class Smithy:
-    pass
+class Smithy(Action):
+    name: str = "Smithy"
+    cost: int = 4
+
+    @classmethod
+    def effect(cls, deck: Deck) -> None:
+        pass
 
 
-class Spy:
-    pass
+class Spy(Attack):
+    name: str = "Spy"
+    cost: int = 4
+
+    @classmethod
+    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:
+        pass
 
 
-class Thief:
-    pass
+class Thief(Attack):
+    name: str = "Thief"
+    cost: int = 4
+
+    @classmethod
+    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:
+        pass
 
 
-class ThroneRoom:
-    pass
+class ThroneRoom(Action):
+    name: str = "Throne Room"
+    cost: int = 4
+
+    @classmethod
+    def effect(cls, deck: Deck) -> None:
+        pass
 
 
-class CouncilRoom:
-    pass
+class CouncilRoom(Action):
+    name: str = "Council Room"
+    cost: int = 5
+
+    @classmethod
+    def effect(cls, deck: Deck) -> None:
+        pass
 
 
-class Festival:
-    pass
+class Festival(Action):
+    name: str = "Festival"
+    cost: int = 5
+
+    @classmethod
+    def effect(cls, deck: Deck) -> None:
+        pass
 
 
-class Laboratory:
-    pass
+class Laboratory(Action):
+    name: str = "Laboratory"
+    cost: int = 5
+
+    @classmethod
+    def effect(cls, deck: Deck) -> None:
+        pass
 
 
-class Library:
-    pass
+class Library(Action):
+    name: str = "Library"
+    cost: int = 5
+
+    @classmethod
+    def effect(cls, deck: Deck) -> None:
+        pass
 
 
-class Market:
-    pass
+class Market(Action):
+    name: str = "Market"
+    cost: int = 5
+
+    @classmethod
+    def effect(cls, deck: Deck) -> None:
+        pass
 
 
-class Mine:
-    pass
+class Mine(Action):
+    name: str = "Mine"
+    cost: int = 5
+
+    @classmethod
+    def effect(cls, deck: Deck) -> None:
+        pass
 
 
-class Witch:
-    pass
+class Witch(Attack):
+    name: str = "Witch"
+    cost: int = 5
+
+    @classmethod
+    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:
+        pass
 
 
-class Adventurer:
-    pass
+class Adventurer(Action):
+    name: str = "Adventurer"
+    cost: int = 6
+
+    @classmethod
+    def effect(cls, deck: Deck) -> None:
+        pass

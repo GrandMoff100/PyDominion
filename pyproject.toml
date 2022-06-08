@@ -14,10 +14,14 @@ python = "^3.8"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.isort]
+profile = "black"
+
 [tool.pylint.messages_control]
 disable = [
     "missing-function-docstring",
     "missing-module-docstring",
     "missing-class-docstring",
     "arguments-differ",
+    "abstract-method"
 ]

@@ -10,7 +10,7 @@ else:
     PlayerTypes = None  # pylint: disable=invalid-name
 
 
-class Treasure(BaseCard):
+class Treasure(BaseCard):  # pylint: disable=abstract-method
     pass
 
 

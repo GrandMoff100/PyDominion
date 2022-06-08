@@ -1,7 +1,9 @@
 import copy
 import typing as t
+from abc import abstractmethod
 
-from .card import KingdomCard, Card
+from ..event import Event
+from .card import Card, KingdomCard
 
 if t.TYPE_CHECKING:
     from ..deck import Deck
@@ -14,6 +16,7 @@ else:
 class Action(KingdomCard):
     @classmethod
     def play(cls, deck: Deck) -> None:
+        super(cls, Card).play(deck)
         deck.discard(cls)
         cls.effect(deck)
 
@@ -25,45 +28,51 @@ class Action(KingdomCard):
 
 class Reaction(Action):
     @classmethod
+    @abstractmethod
     def when_draw(cls, deck: Deck, card: t.Type[Card]) -> None:
-        pass
+        """Abstract Reaction effects when a player draws a card."""
 
     @classmethod
+    @abstractmethod
     def when_buy(cls, deck: Deck, card: t.Type[Card]) -> None:
-        pass
+        """Abstract Reaction effects when a player buys a card."""
 
     @classmethod
+    @abstractmethod
     def when_trash(cls, deck: Deck, card: t.Type[Card]) -> None:
-        pass
+        """Abstract Reaction effects when a player trashs a card."""
 
     @classmethod
+    @abstractmethod
     def when_discard(cls, deck: Deck, card: t.Type[Card]) -> None:
-        pass
+        """Abstract Reaction effects when a player discards a card."""
 
     @classmethod
+    @abstractmethod
     def when_gain(cls, deck: Deck, card: t.Type[Card]) -> None:
-        pass
+        """Abstract Reaction effects when a player gains a card."""
 
     @classmethod
+    @abstractmethod
     def when_attack(cls, deck: Deck, card: t.Type[Card], targets: PlayerTypes) -> None:
-        pass
+        """Abstract Reaction effects when a player plays an attack card."""
 
     @classmethod
+    @abstractmethod
     def when_reveal(cls, deck: Deck, card: t.Type[Card]) -> None:
-        pass
+        """Abstract Reaction effects when a player reveals a card."""
 
 
 class Attack(Action):
     @classmethod
     def play(cls, deck: Deck) -> None:
+        super(cls, Card).play(deck)
         deck.discard(cls)
         targets = copy.copy(deck.game.players)
-        for player in deck.game.players:
-            for card in player.hand:
-                if isinstance(card, Reaction):
-                    card.when_attack(player.deck, cls, targets)
+        deck.game.dispatch_event(deck, Event.ATTACK_EVENT, cls, targets)
         cls.effect(deck, targets)
 
     @classmethod
+    @abstractmethod
     def effect(cls, deck: Deck, targets: PlayerTypes) -> None:
-        pass
+        """Abstract method for attack effects on players."""
