@@ -1,11 +1,9 @@
-import inspect
 import random
 import typing as t
 
-from dominion.base.action import Reaction
-
-from .event import Event
+from .player import Player
 from .base import Card, CardTypes, Copper, Curse, Estate, Victory
+from .event import Event
 
 if t.TYPE_CHECKING:
     from .game import Game
@@ -42,7 +40,7 @@ class Deck:
             Estate,
         ]
         random.shuffle(self.draw_pile)
-        self.draw(5)
+        self.draw(5, trigger_reactions=False)
 
     def cleanup(self) -> None:
         self.discard(self.hand, trigger_reactions=False)
@@ -62,6 +60,10 @@ class Deck:
         self.game.dispatch_event(self, Event.GAIN_EVENT, card)
         self.discard_pile.append(card)
 
+    def gain_to_hand(self, card: t.Type[Card]) -> None:
+        self.game.dispatch_event(self, Event.GAIN_EVENT, card)
+        self.hand.append(card)
+
     def trash(self, card: t.Type[Card]) -> None:
         self.game.dispatch_event(self, Event.TRASH_EVENT, card)
         self.game.trash_pile.append(card)
@@ -70,26 +72,33 @@ class Deck:
     def cards(self) -> CardTypes:
         return self.draw_pile + self.discard_pile + self.hand
 
-    def draw(self, amount: int = 1) -> CardTypes:
-        for _ in range(amount):
-            if not self.draw_pile:
-                self.shuffle()
-            self.hand.append(card := self.draw_pile.pop(0))
-            self.game.dispatch_event(self, Event.DRAW_EVENT, card)
-        return self.hand[len(self.hand) - amount : len(self.hand)]
+    def draw(self, amount: int = 1, trigger_reactions: bool = True) -> CardTypes:
+        if trigger_reactions:
+            for _ in range(amount):
+                if not self.draw_pile:
+                    self.shuffle()
+                self.hand.append(card := self.draw_pile.pop(0))
+                self.game.dispatch_event(self, Event.DRAW_EVENT, card)
+            return self.hand[len(self.hand) - amount : len(self.hand)]
+        return []
 
-    def reveal(self, card: t.Type[Card]):
+    def reveal(self, card: t.Type[Card]) -> t.Type[Card]:
         if card in self.hand:
             self.game.log(
                 f"{self.game.get_player(self).player_id!r} revealed a {card.name}"
             )
             self.game.dispatch_event(self, Event.REVEAL_EVENT, card)
+            return card
         else:
             raise ValueError(f"Cannot reveal {card.name}, it is not in your hand.")
 
     def shuffle(self) -> None:
         self.draw_pile += random.sample(self.discard, len(self.discard))
         self.discard_pile = []
+
+    @property
+    def player(self) -> t.Optional[Player]:
+        return self.game.get_player(self)
 
     @property
     def score(self):
