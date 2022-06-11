@@ -1,4 +1,4 @@
-from abc import abstractclassmethod, abstractmethod
+from abc import abstractmethod
 import uuid
 import typing as t
 
