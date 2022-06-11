@@ -2,10 +2,9 @@ import typing as t
 
 from .card import BaseCard
 
-
 if t.TYPE_CHECKING:
-    from ..player import PlayerTypes
     from ..deck import Deck
+    from ..player import PlayerTypes
 else:
     PlayerTypes = None  # pylint: disable=invalid-name
     Deck = None  # pylint: disable=invalid-name

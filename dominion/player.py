@@ -1,8 +1,7 @@
-import typing as t
+import base64
 import random
 import time
-import base64
-
+import typing as t
 
 if t.TYPE_CHECKING:
     from .deck import Deck

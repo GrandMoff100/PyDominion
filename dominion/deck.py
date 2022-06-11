@@ -1,9 +1,9 @@
 import random
 import typing as t
 
-from .player import Player
 from .base import Card, CardTypes, Copper, Curse, Estate, Victory
 from .event import Event
+from .player import Player
 
 if t.TYPE_CHECKING:
     from .game import Game
@@ -56,17 +56,20 @@ class Deck:
                 )
             self.discard_pile.insert(0, self.hand.pop(self.hand.index(card)))
 
-    def gain(self, card: t.Type[Card]) -> None:
+    def gain(self, card: t.Type[Card]) -> t.Type[Card]:
         self.game.dispatch_event(self, Event.GAIN_EVENT, card)
         self.discard_pile.append(card)
+        return card
 
-    def gain_to_hand(self, card: t.Type[Card]) -> None:
+    def gain_to_hand(self, card: t.Type[Card]) -> t.Type[Card]:
         self.game.dispatch_event(self, Event.GAIN_EVENT, card)
         self.hand.append(card)
+        return card
 
-    def trash(self, card: t.Type[Card]) -> None:
+    def trash(self, card: t.Type[Card]) -> t.Type[Card]:
         self.game.dispatch_event(self, Event.TRASH_EVENT, card)
         self.game.trash_pile.append(card)
+        return card
 
     @property
     def cards(self) -> CardTypes:
@@ -89,8 +92,7 @@ class Deck:
             )
             self.game.dispatch_event(self, Event.REVEAL_EVENT, card)
             return card
-        else:
-            raise ValueError(f"Cannot reveal {card.name}, it is not in your hand.")
+        raise ValueError(f"Cannot reveal {card.name}, it is not in your hand.")
 
     def shuffle(self) -> None:
         self.draw_pile += random.sample(self.discard, len(self.discard))

@@ -1,7 +1,18 @@
 """Module defining the Kingdom Cards for Dominion (First Edition)"""
 import typing as t
 
-from ..base import Action, Attack, Card, KingdomCard, Reaction, Silver, Victory
+from ..base import (
+    Action,
+    Attack,
+    Card,
+    Copper,
+    Curse,
+    KingdomCard,
+    Reaction,
+    Silver,
+    Treasure,
+    Victory,
+)
 from ..deck import Deck
 from ..player import Player, PlayerTypes
 
@@ -209,7 +220,13 @@ class Moneylender(Action):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        pass
+        """
+        You may trash a Copper from your hand for +3 coins.
+        """
+        if Copper in deck.hand:
+            deck.hand.remove(Copper)
+            deck.trash(Copper)
+            deck.coins += 3
 
 
 class Feast(Action):
@@ -218,7 +235,13 @@ class Feast(Action):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        pass
+        """
+        You may trash this card and gain a card costing up to 5 Coins.
+        """
+        deck.discard_pile.remove(cls)
+        deck.trash(cls)
+        choices = [card for card in deck.game.available_cards if card.cost <= 5]
+        deck.gain(deck.player.choice("Which card do you want to gain?", choices))
 
 
 class Remodel(Action):
@@ -227,7 +250,28 @@ class Remodel(Action):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        pass
+        """
+        Trash a card from your hand.
+        Gain a card costing up to 2 Coins more than it.
+        """
+        if deck.hand:
+            trashed_card = deck.trash(
+                deck.player.choice(
+                    "Which card do you want to trash from your hand?", deck.hand
+                )
+            )
+            if available_card_choices := [
+                card
+                for card in deck.game.available_cards
+                if card.cost >= trashed_card.cost + 2
+            ]:
+                deck.gain_to_hand(
+                    deck.player.choice(
+                        "Which Treasure do you want to gain?", available_card_choices
+                    )
+                )
+            else:
+                deck.game.log(deck, "No cards available to be gained.")
 
 
 class Smithy(Action):
@@ -236,7 +280,10 @@ class Smithy(Action):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        pass
+        """
+        +3 Cards
+        """
+        deck.draw(3)
 
 
 class Spy(Attack):
@@ -245,7 +292,20 @@ class Spy(Attack):
 
     @classmethod
     def effect(cls, deck: Deck, targets: t.List[Player]) -> None:
-        pass
+        """
+        +1 Card
+        +1 Action
+        Each player (including you) reveals the top two cards of their deck
+        and either discards it or puts it back.
+        """
+        deck.draw()
+        deck.actions += 1
+        for player in targets + [deck.player]:
+            for i, card in enumerate(player.deck[0:2]):
+                player.deck.reveal(card)
+                if player.choice(f"Discard the {card.name}", ["Yes", "No"]) == "Yes":
+                    player.deck.hand.append(player.deck.pop(i))
+                    player.deck.discard(card)
 
 
 class Thief(Attack):
@@ -254,7 +314,32 @@ class Thief(Attack):
 
     @classmethod
     def effect(cls, deck: Deck, targets: t.List[Player]) -> None:
-        pass
+        """
+        Each other player reveals the top 2 cards of their deck.
+        If they revealed any Treasure cards they trash one of them that you choose.
+        You may gain any or all of these trashed cards.
+        They discard the other Treasure cards.
+        """
+        for player in targets:
+            choices = [
+                card
+                for card in enumerate(player.deck[0:2])
+                if issubclass(card, Treasure)
+            ]
+            if choices:
+                target_card = deck.player.choice(
+                    "Which one of their Treasure cards do you want to trash?", choices
+                )
+                player.deck.remove(target_card)
+                player.deck.trash(target_card)
+                if (
+                    deck.player.choice(
+                        f"Do you want to gain that {target_card.name}?", ["Yes", "No"]
+                    )
+                    == "Yes"
+                ):
+                    deck.gain(target_card)
+                    deck.game.trash_pile.remove(target_card)
 
 
 class ThroneRoom(Action):
@@ -263,7 +348,19 @@ class ThroneRoom(Action):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        pass
+        """
+        Choose an Action card from your hand.
+        You may play it twice.
+        """
+        if action_cards_in_hand := [
+            card for card in deck.hand if issubclass(card, Action)
+        ]:
+            card = deck.player.choice(
+                "Which action card do you wish to play twice?",
+                action_cards_in_hand,
+            )
+            for _ in range(2):
+                card.play()
 
 
 class CouncilRoom(Action):
@@ -272,7 +369,15 @@ class CouncilRoom(Action):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        pass
+        """
+        +4 Cards
+        +1 Buy
+        Each other player draws a card.
+        """
+        deck.draw(4)
+        deck.buys += 1
+        for player in deck.game.players:
+            player.deck.draw()
 
 
 class Festival(Action):
@@ -281,7 +386,14 @@ class Festival(Action):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        pass
+        """
+        +2 Actions
+        +1 Buy
+        +2 Coins
+        """
+        deck.actions += 2
+        deck.buys += 1
+        deck.coins += 2
 
 
 class Laboratory(Action):
@@ -290,7 +402,12 @@ class Laboratory(Action):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        pass
+        """
+        +2 Cards
+        +1 Action
+        """
+        deck.draw(2)
+        deck.actions += 1
 
 
 class Library(Action):
@@ -299,7 +416,20 @@ class Library(Action):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        pass
+        """
+        Draw until you have seven cards in your hand,
+        skipping any Action cards you choose to,
+        set those aside,
+        discard them afterwards.
+        """
+        while len(deck.hand) < 7:
+            drawn_card = deck.draw()[0]
+            if issubclass(drawn_card, Action):
+                if (
+                    deck.player.choice(f"Skip this {drawn_card.name}?", ["Yes", "No"])
+                    == "Yes"
+                ):
+                    deck.discard([drawn_card])
 
 
 class Market(Action):
@@ -308,7 +438,16 @@ class Market(Action):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        pass
+        """
+        +1 Card
+        +1 Action
+        +1 Buy
+        +1 Coin
+        """
+        deck.draw()
+        deck.actions += 1
+        deck.buys += 1
+        deck.coins += 1
 
 
 class Mine(Action):
@@ -317,7 +456,30 @@ class Mine(Action):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        pass
+        """
+        You may trash a Treasure card from your hand.
+        Gain a Treasure card costing up to 3 Coins more than it.
+        """
+        if treasure_cards_in_hand := [
+            card for card in deck.hand if issubclass(card, Treasure)
+        ]:
+            trashed_card = deck.trash(
+                deck.player.choice(
+                    "Which Treasure do you want to trash?", treasure_cards_in_hand
+                )
+            )
+            if available_treasure_cards := [
+                card
+                for card in deck.game.available_cards
+                if issubclass(card, Treasure) and card.cost >= trashed_card.cost + 3
+            ]:
+                deck.gain_to_hand(
+                    deck.player.choice(
+                        "Which Treasure do you want to gain?", available_treasure_cards
+                    )
+                )
+            else:
+                deck.game.log(deck, "No Treasure cards available to be gained.")
 
 
 class Witch(Attack):
@@ -326,7 +488,13 @@ class Witch(Attack):
 
     @classmethod
     def effect(cls, deck: Deck, targets: t.List[Player]) -> None:
-        pass
+        """
+        +2 Cards
+        Each other player gains a curse card.
+        """
+        deck.draw(2)
+        for player in targets:
+            player.deck.discard_pile.append(Curse)
 
 
 class Adventurer(Action):
@@ -335,4 +503,14 @@ class Adventurer(Action):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        pass
+        """
+        Reveal cards from your deck until your reveal two Treasure cards.
+        Put those Treasure cards in your hand and discard the other revealed cards.
+        """
+        revealed_treasure_cards = []
+        while len(revealed_treasure_cards) < 2:
+            card = deck.reveal(deck.draw()[0])
+            if issubclass(card, Treasure):
+                revealed_treasure_cards.append(card)
+            else:
+                deck.discard([card])

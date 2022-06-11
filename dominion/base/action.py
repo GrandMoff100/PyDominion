@@ -69,8 +69,10 @@ class Attack(Action):
         super(cls, Card).play(deck)
         deck.discard(cls)
         targets = copy.copy(deck.game.players)
+        # Allows the current player to activate reaction cards.
         deck.game.dispatch_event(deck, Event.ATTACK_EVENT, cls, targets)
-        cls.effect(deck, targets)
+        # Exclude the current player from attack effects by default.
+        cls.effect(deck, [player for player in targets if player != deck.player])
 
     @classmethod
     @abstractmethod
