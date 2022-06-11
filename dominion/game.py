@@ -71,8 +71,9 @@ class Game:
         self.log(player.deck, f"[{event.name}] {args} {kwargs}")
         if not inspect.isabstract(reaction_events[event]):
             if player.choice(
-                f"Activate your {card.name} to the {card.name}?",
+                f"Activate your {card.name} to the {card.name}?",  # TODO: Make this make sense
                 [True, False],
+                "activation"
             ):
                 reaction_events[event](player.deck, card, *args, **kwargs)
 

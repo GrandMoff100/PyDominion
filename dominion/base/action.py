@@ -18,6 +18,7 @@ class Action(KingdomCard):
     def play(cls, deck: Deck) -> None:
         super(cls, Card).play(deck)
         deck.discard(cls)
+        deck.actions_remaining -= 1
         cls.effect(deck)
 
     @classmethod
@@ -67,7 +68,7 @@ class Attack(Action):
     @classmethod
     def play(cls, deck: Deck) -> None:
         super(cls, Card).play(deck)
-        deck.discard(cls)
+        deck.discard(cls)  # This should already have been taken care of by `Action.play`
         targets = copy.copy(deck.game.players)
         # Allows the current player to activate reaction cards.
         deck.game.dispatch_event(deck, Event.ATTACK_EVENT, cls, targets)

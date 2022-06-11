@@ -20,14 +20,14 @@ class Deck:
     coins: int
     game: Game
 
-    def __init__(self, game: Game):
+    def __init__(self, game: Game, draw_pile: t.List[CardTypes] = None):
         self.game = game
         self.hand = []
         self.discard_pile = []
-        self.buys = 0
-        self.actions = 0
-        self.coins = 0
-        self.draw_pile = [
+        self.buys_remaining = 1
+        self.actions_remaining = 1
+        self.coins_remaining = 0
+        self.draw_pile = draw_pile or [
             Copper,
             Copper,
             Copper,
@@ -44,6 +44,9 @@ class Deck:
 
     def cleanup(self) -> None:
         self.discard(self.hand, trigger_reactions=False)
+        self.buys_remaining = 1
+        self.actions_remaining = 1
+        self.coins_remaining = 0
         self.draw(5)
 
     def discard(self, cards: CardTypes, trigger_reactions: bool = True) -> None:
@@ -52,7 +55,7 @@ class Deck:
                 self.game.dispatch_event(self, Event.DISCARD_EVENT, card)
             if card not in self.hand:
                 raise ValueError(
-                    f"Cannot discard this {card.__qualname__}, it is not in your hand."
+                    f"Cannot discard this {card.name}, it is not in your hand."
                 )
             self.discard_pile.insert(0, self.hand.pop(self.hand.index(card)))
 

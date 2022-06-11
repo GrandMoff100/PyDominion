@@ -19,7 +19,7 @@ class Copper(Treasure):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        deck.coins += 1
+        deck.coins_remaining += 1
 
     @classmethod
     def setup(cls, players: PlayerTypes) -> int:
@@ -33,7 +33,7 @@ class Silver(Treasure):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        deck.coins += 2
+        deck.coins_remaining += 2
 
     @classmethod
     def setup(cls, players: PlayerTypes) -> int:
@@ -47,7 +47,7 @@ class Gold(Treasure):
 
     @classmethod
     def effect(cls, deck: Deck) -> None:
-        deck.coins += 3
+        deck.coins_remaining += 3
 
     @classmethod
     def setup(cls, players: PlayerTypes) -> int:
