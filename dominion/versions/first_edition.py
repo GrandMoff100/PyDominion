@@ -301,7 +301,7 @@ class Spy(Attack):
         deck.draw()
         deck.actions += 1
         for player in targets + [deck.player]:
-            for i, card in enumerate(player.deck[0:2]):
+            for i, card in enumerate(player.deck.draw_pile[0:2]):
                 player.deck.reveal(card)
                 if player.choice(f"Discard the {card.name}", ["Yes", "No"]) == "Yes":
                     player.deck.hand.append(player.deck.pop(i))
@@ -323,7 +323,7 @@ class Thief(Attack):
         for player in targets:
             choices = [
                 card
-                for card in enumerate(player.deck[0:2])
+                for card in enumerate(player.deck.draw_pile[0:2])
                 if issubclass(card, Treasure)
             ]
             if choices:

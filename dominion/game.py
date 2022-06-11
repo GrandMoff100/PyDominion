@@ -42,6 +42,12 @@ class Game:
         ]
 
     @property
+    def empty_supply_piles(self) -> t.List[t.Type[Card]]:
+        return [card for card, count in self.base_cards.items() if count == 0] + [
+            card for card, count in self.kingdom_cards.items() if count == 0
+        ]
+
+    @property
     def current_player(self) -> t.Type[Player]:
         return self.players[0]
 
