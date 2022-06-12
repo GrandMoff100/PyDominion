@@ -26,14 +26,18 @@ class Player:
             for _ in range(10)
         )
 
-    def action_phase(self):
+    def action_phase(self) -> None:
         raise NotImplementedError
 
-    def buy_phase(self):
+    def buy_phase(self) -> None:
         raise NotImplementedError
 
-    def cleanup_phase(self):
-        raise NotImplementedError
+    def cleanup_phase(self) -> None:
+        self.deck.discard(self.deck.hand)
+        self.deck.draw(5)
+        self.deck.actions = 1
+        self.deck.coins = 0
+        self.deck.buys = 1
 
     def choice(self, prompt: str, choices: t.List[t.Any]) -> t.Any:
         raise NotImplementedError
@@ -41,6 +45,9 @@ class Player:
 
 class Human(Player):
     """Implements human text prompts for decisions."""
+
+    def action_phase(self) -> None:
+        pass
 
     def choice(self, prompt: str, choices: t.List[t.Any]) -> t.Any:
         choice_map = {str(choice).lower(): choice for choice in choices}

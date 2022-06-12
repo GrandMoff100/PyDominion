@@ -56,10 +56,6 @@ class Game:
             card for card, count in self.kingdom_cards.items() if count == 0
         ]
 
-    @property
-    def current_player(self) -> t.Type[Player]:
-        return self.players[0]
-
     def get_player(self, deck: Deck) -> t.Optional[Player]:
         for player in self.players:
             if player.deck == deck:
@@ -107,7 +103,17 @@ class Game:
     def ended(self) -> bool:
         if self.base_cards[Province] == 0:
             return True
-        empty_piles = [
-            card for card, count in self.kingdom_cards.items() if count == 0
-        ] + [card for card, count in self.base_cards.items() if count == 0]
-        return len(empty_piles) >= 3
+        return len(self.empty_supply_piles) >= 3
+
+    def play(self) -> None:
+        break_flag = False
+        while not break_flag:
+            for player in self.players:
+                player.action_phase()
+                player.buy_phase()
+                player.cleanup_phase()
+                if self.ended:
+                    break_flag = True
+            if break_flag:
+                break
+
