@@ -3,9 +3,18 @@ import io
 import sys
 import typing as t
 
-from dominion.base.action import Reaction
-
-from .base import Card, CardTypes, Copper, Curse, Duchy, Estate, Gold, Province, Silver
+from .cards import (
+    Card,
+    CardTypes,
+    Copper,
+    Curse,
+    Duchy,
+    Estate,
+    Gold,
+    Province,
+    Reaction,
+    Silver,
+)
 from .deck import Deck
 from .event import Event
 from .player import Player, PlayerTypes
@@ -39,6 +48,12 @@ class Game:
     def available_cards(self) -> t.List[t.Type[Card]]:
         return [card for card, count in self.base_cards.items() if count > 0] + [
             card for card, count in self.kingdom_cards.items() if count > 0
+        ]
+
+    @property
+    def empty_supply_piles(self) -> t.List[t.Type[Card]]:
+        return [card for card, count in self.base_cards.items() if count == 0] + [
+            card for card, count in self.kingdom_cards.items() if count == 0
         ]
 
     @property

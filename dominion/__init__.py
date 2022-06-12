@@ -1,4 +1,4 @@
-from .base import *
+from .cards import *
 from .deck import Deck
 from .game import Game
 from .player import Human, Player
