@@ -1,7 +1,9 @@
 """Module defining the Kingdom Cards for Dominion (First Edition)"""
 import typing as t
 
-from ..base import (
+from ...deck import Deck
+from ...player import Player, PlayerTypes
+from .. import (
     Action,
     Attack,
     Card,
@@ -13,8 +15,6 @@ from ..base import (
     Treasure,
     Victory,
 )
-from ..deck import Deck
-from ..player import Player, PlayerTypes
 
 __all__ = (
     "Cellar",
@@ -360,7 +360,7 @@ class ThroneRoom(Action):
                 action_cards_in_hand,
             )
             for _ in range(2):
-                card.play()
+                card.play(deck)
 
 
 class CouncilRoom(Action):

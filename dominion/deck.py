@@ -1,7 +1,7 @@
 import random
 import typing as t
 
-from .base import Card, CardTypes, Copper, Curse, Estate, Victory
+from .cards import Card, CardTypes, Copper, Curse, Estate, Victory
 from .event import Event
 from .player import Player
 

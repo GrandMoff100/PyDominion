@@ -1,9 +1,9 @@
 """Module defining the Kingdom Cards for Dominion (Second Edition)"""
 import typing as t
 
-from ..base import Action, Attack, Copper, Gold, Treasure
-from ..deck import Deck
-from ..player import Player
+from ...deck import Deck
+from ...player import Player
+from .. import Action, Attack, Copper, Gold, Treasure
 from .first_edition import (
     Bureaucrat,
     Cellar,
