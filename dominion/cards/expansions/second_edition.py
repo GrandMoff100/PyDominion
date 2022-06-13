@@ -173,7 +173,7 @@ class Sentry(Action):
         deck.actions += 1
         cards_to_put_back = []
         for i, card in enumerate(deck.draw_pile[0:2]):
-            print(f"Card {i + 1}/2: {card.name}")
+            deck.game.out(f"Card {i + 1}/2: {card.name}")
             choice = deck.player.choice(
                 "What do you want to do with it?", ["Trash", "Discard", "Put Back"]
             )

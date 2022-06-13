@@ -1,12 +1,19 @@
-import base64
-import random
-import time
+import uuid
 import typing as t
+
+from .cards import Action, Card
 
 if t.TYPE_CHECKING:
     from .deck import Deck
 else:
     Deck = None  # pylint: disable=invalid-name
+
+
+def choice_repr(obj: t.Any) -> str:
+    if isinstance(obj, type):  # Explicit isclass behavior
+        if issubclass(obj, Card):
+            return obj.name
+    return str(obj)
 
 
 class Player:
@@ -17,14 +24,10 @@ class Player:
 
     def __init__(self, deck: Deck):
         self.deck = deck
-        self.player_id = base64.b64encode(
-            str(time.time()).zfill(24).encode()
-        ).decode() + "".join(
-            random.choice(
-                "1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM"
-            )
-            for _ in range(10)
-        )
+        self.player_id = uuid.uuid4()
+
+    def display_hand(self) -> None:
+        self.deck.game.log(self.deck, "Your Hand:", *[card.name for card in self.deck.hand])
 
     def action_phase(self) -> None:
         raise NotImplementedError
@@ -47,16 +50,38 @@ class Human(Player):
     """Implements human text prompts for decisions."""
 
     def action_phase(self) -> None:
-        pass
+        while self.deck.actions > 0 and (actions := [card for card in self.deck.hand if issubclass(card, Action)]):
+            if target_action := self.choice(
+                f"Actions: {self.deck.actions}\nWhich Action card would you like to play?",
+                actions + [None],
+            ):
+                target_action.play(self.deck)
+            else:
+                break
+
+    def buy_phase(self) -> None:
+        while self.deck.buys > 0:
+            if target_card := self.choice(
+                f"Buys: {self.deck.buys}\nWhich card would you like to buy?",
+                [
+                    card
+                    for card in self.deck.game.available_cards
+                    if card.cost <= self.deck.coins
+                ]
+                + [None],
+            ):
+                target_card.buy(self.deck)
+            else:
+                break
 
     def choice(self, prompt: str, choices: t.List[t.Any]) -> t.Any:
-        choice_map = {str(choice).lower(): choice for choice in choices}
-
-        return choice_map[
-            input(f"[{self.player_id}] {prompt} ({'/'.join(map(str, choices))}): ")
-            .strip()
-            .lower()
-        ]
+        choice_map = {choice_repr(choice).strip().lower(): choice for choice in choices}
+        resp = input(
+            f"[{self.player_id}] {prompt} ({'/'.join(map(choice_repr, choices))}): "
+        ).strip()
+        if resp:
+            return choice_map[resp.lower()]
+        return None
 
 
 PlayerTypes = t.List[t.Type[Player]]

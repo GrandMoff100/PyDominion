@@ -46,6 +46,11 @@ class Duchy(Victory, BaseCard):
 
     @classmethod
     def points(cls, deck: Deck) -> int:
+        return 3
+
+    @classmethod
+    def setup(cls, players: PlayerTypes) -> int:
+        """How many Duchys to start with."""
         return 12
 
 
@@ -55,4 +60,9 @@ class Province(Victory, BaseCard):
 
     @classmethod
     def points(cls, deck: Deck) -> int:
+        return 6
+
+    @classmethod
+    def setup(cls, players: PlayerTypes) -> int:
+        """How many Provinces to start with."""
         return 12

@@ -17,6 +17,9 @@ class Action(KingdomCard):
     @classmethod
     def play(cls, deck: Deck) -> None:
         super(cls, Card).play(deck)
+        if deck.actions <= 0:
+            raise ValueError("No actions available.")
+        deck.actions -= 1
         deck.discard(cls)
         cls.effect(deck)
 

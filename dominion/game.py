@@ -14,6 +14,7 @@ from .cards import (
     Province,
     Reaction,
     Silver,
+    Treasure
 )
 from .deck import Deck
 from .event import Event
@@ -40,9 +41,9 @@ class Game:
             card: card.setup(players)
             for card in [Copper, Silver, Gold, Estate, Duchy, Province, Curse]
         }
-        self.raw_log("The Supply is setup!")
+        self.out("[INIT] The Supply is setup!")
         self.players = [player(Deck(self)) for player in players]
-        self.raw_log("The players have been dealt!")
+        self.out("[INIT] The players have been dealt!")
 
     @property
     def available_cards(self) -> t.List[t.Type[Card]]:
@@ -89,18 +90,13 @@ class Game:
 
     def dispatch_event(self, deck: Deck, event: Event, *args, **kwargs) -> None:
         for player in deck.game.players:
-            for hand_card in player.hand:
+            for hand_card in player.deck.hand:
                 if issubclass(hand_card, Reaction):
                     self.call_reaction_effect(player, hand_card, event, *args, **kwargs)
 
-    def log(self, deck: Deck, message: str) -> None:
-        self.raw_log(f"[{self.get_player(deck).player_id}] {message}")
-
-    def raw_log(self, message: str):
-        print(message, file=self.game_output)
-
     @property
     def ended(self) -> bool:
+        print(self.base_cards)
         if self.base_cards[Province] == 0:
             return True
         return len(self.empty_supply_piles) >= 3
@@ -109,11 +105,21 @@ class Game:
         break_flag = False
         while not break_flag:
             for player in self.players:
+                player.display_hand()
                 player.action_phase()
+                for card in player.deck.hand:
+                    if issubclass(card, Treasure):
+                        card.effect(player.deck)
                 player.buy_phase()
                 player.cleanup_phase()
                 if self.ended:
                     break_flag = True
+                    break
             if break_flag:
                 break
 
+    def log(self, deck: Deck, message: str, *args, **kwargs) -> None:
+        self.out(f"[{self.get_player(deck).player_id}] {message}", *args, **kwargs)
+
+    def out(self, *args, **kwargs) -> None:
+        return print(*args, **kwargs, file=self.game_output)

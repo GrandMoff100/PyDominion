@@ -14,9 +14,13 @@ class Card:
 
     @classmethod
     def buy(cls, deck: Deck) -> None:
+        if deck.buys <= 0:
+            raise ValueError("No buys available.")
         if deck.coins >= cls.cost:
             deck.coins -= cls.cost
-            deck.discard.append(cls)
+            deck.buys -= 1
+            deck.discard_pile.append(cls)
+            deck.game.log(deck, "You bought the", cls.name)
         else:
             raise ValueError(f"You does not have enough coins to buy the {cls.name}")
 
@@ -34,6 +38,7 @@ class Card:
     def setup(cls, players: PlayerTypes) -> int:  # pylint: disable=unused-argument
         """How many of a card type to start with depending on how many players."""
         return 0
+
 
 
 class BaseCard(Card):  # pylint: disable=abstract-method

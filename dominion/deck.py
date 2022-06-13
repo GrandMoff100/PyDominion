@@ -24,8 +24,8 @@ class Deck:
         self.game = game
         self.hand = []
         self.discard_pile = []
-        self.buys = 0
-        self.actions = 0
+        self.buys = 1
+        self.actions = 1
         self.coins = 0
         self.draw_pile = [
             Copper,
@@ -52,7 +52,7 @@ class Deck:
                 self.game.dispatch_event(self, Event.DISCARD_EVENT, card)
             if card not in self.hand:
                 raise ValueError(
-                    f"Cannot discard this {card.__qualname__}, it is not in your hand."
+                    f"Cannot discard this {card.name}, it is not in your hand."
                 )
             self.discard_pile.insert(0, self.hand.pop(self.hand.index(card)))
 
@@ -76,15 +76,13 @@ class Deck:
         return self.draw_pile + self.discard_pile + self.hand
 
     def draw(self, amount: int = 1, trigger_reactions: bool = True) -> CardTypes:
-        if trigger_reactions:
-            for _ in range(amount):
-                if not self.draw_pile:
-                    self.shuffle()
-                self.hand.append(card := self.draw_pile.pop(0))
+        for _ in range(amount):
+            if not self.draw_pile:
+                self.shuffle()
+            self.hand.append(card := self.draw_pile.pop(0))
+            if trigger_reactions:
                 self.game.dispatch_event(self, Event.DRAW_EVENT, card)
-            return self.hand[len(self.hand) - amount : len(self.hand)]
-        return []
-
+        return self.hand[len(self.hand) - amount : len(self.hand)]
     def reveal(self, card: t.Type[Card]) -> t.Type[Card]:
         if card in self.hand:
             self.game.log(
@@ -95,7 +93,7 @@ class Deck:
         raise ValueError(f"Cannot reveal {card.name}, it is not in your hand.")
 
     def shuffle(self) -> None:
-        self.draw_pile += random.sample(self.discard, len(self.discard))
+        self.draw_pile += random.sample(self.discard_pile, len(self.discard))
         self.discard_pile = []
 
     @property
