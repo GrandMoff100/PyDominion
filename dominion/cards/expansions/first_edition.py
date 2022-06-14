@@ -1,20 +1,14 @@
 """Module defining the Kingdom Cards for Dominion (First Edition)"""
 import typing as t
 
-from ...deck import Deck
-from ...player import Player, PlayerTypes
-from .. import (
-    Action,
-    Attack,
-    Card,
-    Copper,
-    Curse,
-    KingdomCard,
-    Reaction,
-    Silver,
-    Treasure,
-    Victory,
-)
+from dominion.cards.action import Action, Attack, Reaction
+from dominion.cards.card import Card, KingdomCard
+from dominion.cards.curse import Curse
+from dominion.cards.treasure import Copper, Silver, Treasure
+from dominion.cards.victory import Victory
+from dominion.deck import Deck
+from dominion.errors import CardNotFoundError, IllegalEffectError
+from dominion.player import Player, PlayerTypes
 
 __all__ = (
     "Cellar",
@@ -72,11 +66,13 @@ class Chapel(Action):
                 if card in deck.hand:
                     deck.trash(deck.hand.pop(deck.hand.index(card)))
                 else:
-                    raise ValueError(
+                    raise CardNotFoundError(
                         f"Cannot trash the {card.name}, it is not in your hand."
                     )
         else:
-            raise ValueError(f"Cannot trash more than four cards with the {cls.name}")
+            raise IllegalEffectError(
+                f"Cannot trash more than four cards with the {cls.name}"
+            )
 
 
 class Moat(Reaction):
@@ -114,6 +110,7 @@ class Chancellor(Action):
         deck.coins += 2
         if (
             deck.game.get_player(deck).choice(
+                cls,
                 "You may immediately put your deck in the discard pile:",
                 ["Yes", "No"],
             )
@@ -159,6 +156,7 @@ class Workshop(Action):
     def effect(cls, deck: Deck) -> None:
         """Gain a card costing up to four coins."""
         deck.game.get_player(deck).choice(
+            cls,
             "Gain a card costing up to four coins:",
             [card for card in deck.game.available_cards if card.cost <= 4],
         )
@@ -208,6 +206,7 @@ class Militia(Attack):
             for _ in range(max([3, len(player.deck.hand)]) - 3):
                 player.deck.discard(
                     player.choice(
+                        cls,
                         "Choose one card from your hand to discard",
                         player.deck.hand,
                     )
@@ -241,7 +240,7 @@ class Feast(Action):
         deck.discard_pile.remove(cls)
         deck.trash(cls)
         choices = [card for card in deck.game.available_cards if card.cost <= 5]
-        deck.gain(deck.player.choice("Which card do you want to gain?", choices))
+        deck.gain(deck.player.choice(cls, "Which card do you want to gain?", choices))
 
 
 class Remodel(Action):
@@ -257,7 +256,7 @@ class Remodel(Action):
         if deck.hand:
             trashed_card = deck.trash(
                 deck.player.choice(
-                    "Which card do you want to trash from your hand?", deck.hand
+                    cls, "Which card do you want to trash from your hand?", deck.hand
                 )
             )
             if available_card_choices := [
@@ -267,7 +266,9 @@ class Remodel(Action):
             ]:
                 deck.gain_to_hand(
                     deck.player.choice(
-                        "Which Treasure do you want to gain?", available_card_choices
+                        cls,
+                        "Which Treasure do you want to gain?",
+                        available_card_choices,
                     )
                 )
             else:
@@ -303,7 +304,10 @@ class Spy(Attack):
         for player in targets + [deck.player]:
             for i, card in enumerate(player.deck.draw_pile[0:2]):
                 player.deck.reveal(card)
-                if player.choice(f"Discard the {card.name}", ["Yes", "No"]) == "Yes":
+                if (
+                    player.choice(cls, f"Discard the {card.name}", ["Yes", "No"])
+                    == "Yes"
+                ):
                     player.deck.hand.append(player.deck.pop(i))
                     player.deck.discard(card)
 
@@ -328,13 +332,17 @@ class Thief(Attack):
             ]
             if choices:
                 target_card = deck.player.choice(
-                    "Which one of their Treasure cards do you want to trash?", choices
+                    cls,
+                    "Which one of their Treasure cards do you want to trash?",
+                    choices,
                 )
                 player.deck.remove(target_card)
                 player.deck.trash(target_card)
                 if (
                     deck.player.choice(
-                        f"Do you want to gain that {target_card.name}?", ["Yes", "No"]
+                        cls,
+                        f"Do you want to gain that {target_card.name}?",
+                        ["Yes", "No"],
                     )
                     == "Yes"
                 ):
@@ -356,6 +364,7 @@ class ThroneRoom(Action):
             card for card in deck.hand if issubclass(card, Action)
         ]:
             card = deck.player.choice(
+                cls,
                 "Which action card do you wish to play twice?",
                 action_cards_in_hand,
             )
@@ -426,7 +435,11 @@ class Library(Action):
             drawn_card = deck.draw()[0]
             if issubclass(drawn_card, Action):
                 if (
-                    deck.player.choice(f"Skip this {drawn_card.name}?", ["Yes", "No"])
+                    deck.player.choice(
+                        cls,
+                        f"Skip this {drawn_card.name}?",
+                        ["Yes", "No"],
+                    )
                     == "Yes"
                 ):
                     deck.discard([drawn_card])
@@ -465,7 +478,7 @@ class Mine(Action):
         ]:
             trashed_card = deck.trash(
                 deck.player.choice(
-                    "Which Treasure do you want to trash?", treasure_cards_in_hand
+                    cls, "Which Treasure do you want to trash?", treasure_cards_in_hand
                 )
             )
             if available_treasure_cards := [
@@ -475,7 +488,9 @@ class Mine(Action):
             ]:
                 deck.gain_to_hand(
                     deck.player.choice(
-                        "Which Treasure do you want to gain?", available_treasure_cards
+                        cls,
+                        "Which Treasure do you want to gain?",
+                        available_treasure_cards,
                     )
                 )
             else:

@@ -2,6 +2,8 @@ import copy
 import typing as t
 from abc import abstractmethod
 
+from dominion.errors import NoActionsAvailableError
+
 from ..event import Event
 from .card import Card, KingdomCard
 
@@ -16,12 +18,13 @@ else:
 class Action(KingdomCard):
     @classmethod
     def play(cls, deck: Deck) -> None:
-        super(cls, Card).play(deck)
+        super(Action, cls).play(deck)
         if deck.actions <= 0:
-            raise ValueError("No actions available.")
+            raise NoActionsAvailableError("No actions available.")
         deck.actions -= 1
-        deck.discard(cls)
+        deck.discard([cls])
         cls.effect(deck)
+        print(deck.actions)
 
     @classmethod
     def setup(cls, players: PlayerTypes) -> int:
@@ -69,8 +72,7 @@ class Reaction(Action):
 class Attack(Action):
     @classmethod
     def play(cls, deck: Deck) -> None:
-        super(cls, Card).play(deck)
-        deck.discard(cls)
+        super(Attack, Action).play(deck)
         targets = copy.copy(deck.game.players)
         # Allows the current player to activate reaction cards.
         deck.game.dispatch_event(deck, Event.ATTACK_EVENT, cls, targets)

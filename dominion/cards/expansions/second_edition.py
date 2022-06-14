@@ -1,10 +1,8 @@
 """Module defining the Kingdom Cards for Dominion (Second Edition)"""
 import typing as t
 
-from ...deck import Deck
-from ...player import Player
-from .. import Action, Attack, Copper, Gold, Treasure
-from .first_edition import (
+from dominion.cards.action import Action, Attack
+from dominion.cards.expansions.first_edition import (
     Bureaucrat,
     Cellar,
     Chapel,
@@ -25,6 +23,9 @@ from .first_edition import (
     Witch,
     Workshop,
 )
+from dominion.cards.treasure import Copper, Gold, Treasure
+from dominion.deck import Deck
+from dominion.player import Player
 
 __all__ = (
     "Cellar",
@@ -72,6 +73,7 @@ class Harbinger(Action):
         deck.actions += 1
         if deck.discard_pile:
             if chosen_card := deck.game.get_player(deck).choice(
+                cls,
                 "What card from your discard pile do you choose?",
                 deck.discard_pile + [None],
             ):
@@ -126,6 +128,7 @@ class Poacher(Action):
             deck.discard(
                 [
                     deck.player.choice(
+                        cls,
                         f"({i + 1}/{cards_to_discard}) Which card will you discard?",
                         deck.hand,
                     )
@@ -175,7 +178,7 @@ class Sentry(Action):
         for i, card in enumerate(deck.draw_pile[0:2]):
             deck.game.out(f"Card {i + 1}/2: {card.name}")
             choice = deck.player.choice(
-                "What do you want to do with it?", ["Trash", "Discard", "Put Back"]
+                cls, "What do you want to do with it?", ["Trash", "Discard", "Put Back"]
             )
             deck.draw_pile.remove(card)
             if choice == "Trash":
@@ -187,7 +190,7 @@ class Sentry(Action):
                 cards_to_put_back.append(card)
         if cards_to_put_back:
             first_card = deck.player.choice(
-                "Which card do you want to put back first?", cards_to_put_back
+                cls, "Which card do you want to put back first?", cards_to_put_back
             )
             deck.draw_pile.insert(0, first_card)
             if len(cards_to_put_back) > 1:
@@ -208,11 +211,12 @@ class Artisan(Action):
         choices = [card for card in deck.game.available_cards if card.cost <= 5]
         deck.gain_to_hand(
             deck.player.choice(
-                "Which card would you like to gain to your hand?", choices
+                cls, "Which card would you like to gain to your hand?", choices
             )
         )
         deck.hand.remove(
             card := deck.player.choice(
+                cls,
                 "Which card are you going to put on top of your deck from your hand?",
                 deck.hand,
             )

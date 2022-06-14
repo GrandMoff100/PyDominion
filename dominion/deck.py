@@ -1,9 +1,13 @@
 import random
 import typing as t
 
-from .cards import Card, CardTypes, Copper, Curse, Estate, Victory
-from .event import Event
-from .player import Player
+from dominion.cards.card import Card, CardTypes
+from dominion.cards.curse import Curse
+from dominion.cards.treasure import Copper
+from dominion.cards.victory import Estate, Victory
+from dominion.errors import CardNotFoundError
+from dominion.event import Event
+from dominion.player import Player
 
 if t.TYPE_CHECKING:
     from .game import Game
@@ -44,30 +48,39 @@ class Deck:
 
     def cleanup(self) -> None:
         self.discard(self.hand, trigger_reactions=False)
-        self.draw(5)
+        self.draw(5, trigger_reactions=False)
 
     def discard(self, cards: CardTypes, trigger_reactions: bool = True) -> None:
-        for card in cards:
-            if trigger_reactions:
-                self.game.dispatch_event(self, Event.DISCARD_EVENT, card)
+        for card in list(cards):
             if card not in self.hand:
-                raise ValueError(
+                raise CardNotFoundError(
                     f"Cannot discard this {card.name}, it is not in your hand."
                 )
+            if trigger_reactions:
+                self.game.dispatch_event(self, Event.DISCARD_EVENT, card)
+                self.game.log(self, "You discarded", card.name)
             self.discard_pile.insert(0, self.hand.pop(self.hand.index(card)))
 
-    def gain(self, card: t.Type[Card]) -> t.Type[Card]:
-        self.game.dispatch_event(self, Event.GAIN_EVENT, card)
+    def gain(self, card: t.Type[Card], trigger_reactions: bool = True) -> t.Type[Card]:
+        if trigger_reactions:
+            self.game.dispatch_event(self, Event.GAIN_EVENT, card)
+            self.game.log(self, "You gained a", card.name)
         self.discard_pile.append(card)
         return card
 
-    def gain_to_hand(self, card: t.Type[Card]) -> t.Type[Card]:
-        self.game.dispatch_event(self, Event.GAIN_EVENT, card)
+    def gain_to_hand(
+        self, card: t.Type[Card], trigger_reactions: bool = True
+    ) -> t.Type[Card]:
+        if trigger_reactions:
+            self.game.dispatch_event(self, Event.GAIN_EVENT, card)
+            self.game.log(self, "You gained a", card.name, "to your hand.")
         self.hand.append(card)
         return card
 
-    def trash(self, card: t.Type[Card]) -> t.Type[Card]:
-        self.game.dispatch_event(self, Event.TRASH_EVENT, card)
+    def trash(self, card: t.Type[Card], trigger_reactions: bool = True) -> t.Type[Card]:
+        if trigger_reactions:
+            self.game.dispatch_event(self, Event.TRASH_EVENT, card)
+            self.game.log(self, "You trashed a", card.name)
         self.game.trash_pile.append(card)
         return card
 
@@ -79,21 +92,24 @@ class Deck:
         for _ in range(amount):
             if not self.draw_pile:
                 self.shuffle()
-            self.hand.append(card := self.draw_pile.pop(0))
+            card = self.draw_pile.pop(0)
             if trigger_reactions:
                 self.game.dispatch_event(self, Event.DRAW_EVENT, card)
+                self.game.log(self, "You drew a", card.name)
+            self.hand.append(card)
         return self.hand[len(self.hand) - amount : len(self.hand)]
+
     def reveal(self, card: t.Type[Card]) -> t.Type[Card]:
         if card in self.hand:
+            self.game.dispatch_event(self, Event.REVEAL_EVENT, card)
             self.game.log(
                 f"{self.game.get_player(self).player_id!r} revealed a {card.name}"
             )
-            self.game.dispatch_event(self, Event.REVEAL_EVENT, card)
             return card
-        raise ValueError(f"Cannot reveal {card.name}, it is not in your hand.")
+        raise CardNotFoundError(f"Cannot reveal {card.name}, it is not in your hand.")
 
     def shuffle(self) -> None:
-        self.draw_pile += random.sample(self.discard_pile, len(self.discard))
+        self.draw_pile += random.sample(self.discard_pile, len(self.discard_pile))
         self.discard_pile = []
 
     @property

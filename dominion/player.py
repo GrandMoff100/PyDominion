@@ -1,10 +1,11 @@
-import uuid
 import typing as t
+import uuid
 
-from .cards import Action, Card
+from dominion.cards.action import Action
+from dominion.cards.card import Card
 
 if t.TYPE_CHECKING:
-    from .deck import Deck
+    from dominion.deck import Deck
 else:
     Deck = None  # pylint: disable=invalid-name
 
@@ -24,10 +25,14 @@ class Player:
 
     def __init__(self, deck: Deck):
         self.deck = deck
-        self.player_id = uuid.uuid4()
+        self.player_id = f"{self.__class__.__qualname__}-{uuid.uuid4()}"
 
     def display_hand(self) -> None:
-        self.deck.game.log(self.deck, "Your Hand:", *[card.name for card in self.deck.hand])
+        self.deck.game.log(
+            self.deck,
+            "Your Hand:",
+            *[card.name for card in self.deck.hand],
+        )
 
     def action_phase(self) -> None:
         raise NotImplementedError
@@ -36,8 +41,7 @@ class Player:
         raise NotImplementedError
 
     def cleanup_phase(self) -> None:
-        self.deck.discard(self.deck.hand)
-        self.deck.draw(5)
+        self.deck.cleanup()
         self.deck.actions = 1
         self.deck.coins = 0
         self.deck.buys = 1
@@ -50,8 +54,11 @@ class Human(Player):
     """Implements human text prompts for decisions."""
 
     def action_phase(self) -> None:
-        while self.deck.actions > 0 and (actions := [card for card in self.deck.hand if issubclass(card, Action)]):
+        while self.deck.actions > 0 and (
+            actions := [card for card in self.deck.hand if issubclass(card, Action)]
+        ):
             if target_action := self.choice(
+                "Turn",
                 f"Actions: {self.deck.actions}\nWhich Action card would you like to play?",
                 actions + [None],
             ):
@@ -62,6 +69,7 @@ class Human(Player):
     def buy_phase(self) -> None:
         while self.deck.buys > 0:
             if target_card := self.choice(
+                "Turn",
                 f"Buys: {self.deck.buys}\nWhich card would you like to buy?",
                 [
                     card
@@ -74,10 +82,10 @@ class Human(Player):
             else:
                 break
 
-    def choice(self, prompt: str, choices: t.List[t.Any]) -> t.Any:
+    def choice(self, card: t.Type[Card], prompt: str, choices: t.List[t.Any]) -> t.Any:
         choice_map = {choice_repr(choice).strip().lower(): choice for choice in choices}
         resp = input(
-            f"[{self.player_id}] {prompt} ({'/'.join(map(choice_repr, choices))}): "
+            f"[{self.player_id}] {choice_repr(card)}: {prompt} ({'/'.join(map(choice_repr, choices))}): "
         ).strip()
         if resp:
             return choice_map[resp.lower()]

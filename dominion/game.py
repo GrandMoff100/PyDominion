@@ -3,22 +3,15 @@ import io
 import sys
 import typing as t
 
-from .cards import (
-    Card,
-    CardTypes,
-    Copper,
-    Curse,
-    Duchy,
-    Estate,
-    Gold,
-    Province,
-    Reaction,
-    Silver,
-    Treasure
-)
-from .deck import Deck
-from .event import Event
-from .player import Player, PlayerTypes
+from dominion.cards.action import Reaction
+from dominion.cards.card import Card, CardTypes
+from dominion.cards.curse import Curse
+from dominion.cards.treasure import Copper, Gold, Silver, Treasure
+from dominion.cards.victory import Duchy, Estate, Province
+from dominion.deck import Deck
+from dominion.event import Event
+from dominion.player import Player, PlayerTypes
+from dominion.report import Report
 
 
 class Game:
@@ -33,7 +26,9 @@ class Game:
         players: PlayerTypes,
         kingdom_card_set: CardTypes,
         game_output: io.FileIO = sys.stdout,
+        log_events: bool = False,
     ):
+        self.log_events = log_events
         self.game_output = game_output
         self.trash_pile = []
         self.kingdom_cards = {card: card.setup(players) for card in kingdom_card_set}
@@ -46,10 +41,12 @@ class Game:
         self.out("[INIT] The players have been dealt!")
 
     @property
+    def supply(self) -> t.Tuple[t.Tuple[Card, int], ...]:
+        return dict(tuple(self.kingdom_cards.items()) + tuple(self.base_cards.items()))
+
+    @property
     def available_cards(self) -> t.List[t.Type[Card]]:
-        return [card for card, count in self.base_cards.items() if count > 0] + [
-            card for card, count in self.kingdom_cards.items() if count > 0
-        ]
+        return [card for card, count in self.supply.items() if count > 0]
 
     @property
     def empty_supply_piles(self) -> t.List[t.Type[Card]]:
@@ -83,7 +80,8 @@ class Game:
         self.log(player.deck, f"[{event.name}] {args} {kwargs}")
         if not inspect.isabstract(reaction_events[event]):
             if player.choice(
-                f"Activate your {card.name} to the {card.name}?",
+                card,
+                f"Activate your {card.name} in response to the {card.name}?",
                 [True, False],
             ):
                 reaction_events[event](player.deck, card, *args, **kwargs)
@@ -96,12 +94,11 @@ class Game:
 
     @property
     def ended(self) -> bool:
-        print(self.base_cards)
         if self.base_cards[Province] == 0:
             return True
         return len(self.empty_supply_piles) >= 3
 
-    def play(self) -> None:
+    def play(self) -> Report:
         break_flag = False
         while not break_flag:
             for player in self.players:
@@ -117,9 +114,12 @@ class Game:
                     break
             if break_flag:
                 break
+        return Report(self)
 
     def log(self, deck: Deck, message: str, *args, **kwargs) -> None:
         self.out(f"[{self.get_player(deck).player_id}] {message}", *args, **kwargs)
 
     def out(self, *args, **kwargs) -> None:
-        return print(*args, **kwargs, file=self.game_output)
+        if self.log_events:
+            return print(*args, **kwargs, file=self.game_output)
+        return None
