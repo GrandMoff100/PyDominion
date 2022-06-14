@@ -2,7 +2,6 @@ from bots.bigmoney import BigMoney, BigMoneySmithy
 from dominion import Game
 from dominion.cards.expansions import first_edition as fe
 
-
 kingdom = [
     fe.Cellar,
     fe.ThroneRoom,
@@ -16,10 +15,7 @@ kingdom = [
     fe.Feast,
 ]
 
-scores = {
-    BigMoney: 0,
-    BigMoneySmithy: 0
-}
+scores = {BigMoney: 0, BigMoneySmithy: 0}
 
 for i in range(10000):
     print("Game:", i)

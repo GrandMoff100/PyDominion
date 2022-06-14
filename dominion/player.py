@@ -46,7 +46,9 @@ class Player:
         self.deck.coins = 0
         self.deck.buys = 1
 
-    def choice(self, card: t.Optional[t.Type[Card]], prompt: str, choices: t.List[t.Any]) -> t.Any:
+    def choice(
+        self, card: t.Optional[t.Type[Card]], prompt: str, choices: t.List[t.Any]
+    ) -> t.Any:
         raise NotImplementedError
 
 
@@ -81,10 +83,15 @@ class Human(Player):
             else:
                 break
 
-    def choice(self, card: t.Optional[t.Type[Card]], prompt: str, choices: t.List[t.Any]) -> t.Any:
+    def choice(
+        self, card: t.Optional[t.Type[Card]], prompt: str, choices: t.List[t.Any]
+    ) -> t.Any:
         choice_map = {choice_repr(choice).strip().lower(): choice for choice in choices}
         resp = input(
-            f"[{self.player_id}] {choice_repr(card)}: {prompt} ({'/'.join(map(choice_repr, choices))}): "
+            f"[{self.player_id}] "
+            f"{choice_repr(card)}: "
+            f"{prompt} "
+            f"({'/'.join(map(choice_repr, choices))}): "
         ).strip()
         if resp:
             return choice_map[resp.lower()]

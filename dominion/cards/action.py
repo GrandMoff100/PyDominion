@@ -2,10 +2,9 @@ import copy
 import typing as t
 from abc import abstractmethod
 
-from dominion.errors import NoActionsAvailableError
-
-from dominion.event import Event
 from dominion.cards.card import Card, KingdomCard
+from dominion.errors import NoActionsAvailableError
+from dominion.event import Event
 
 if t.TYPE_CHECKING:
     from dominion.deck import Deck

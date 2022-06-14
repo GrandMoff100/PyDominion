@@ -33,7 +33,9 @@ class Game:
         self.trash_pile = []
         self.players = [player(Deck(self)) for player in players]
         self.out("[INIT] The players have been dealt!")
-        self.kingdom_cards = {card: card.setup(self.players) for card in kingdom_card_set}
+        self.kingdom_cards = {
+            card: card.setup(self.players) for card in kingdom_card_set
+        }
         self.base_cards = {
             card: card.setup(self.players)
             for card in [Copper, Silver, Gold, Estate, Duchy, Province, Curse]

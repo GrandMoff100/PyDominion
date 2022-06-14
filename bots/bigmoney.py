@@ -24,7 +24,9 @@ class BigMoney(Player):
         elif self.deck.coins >= 3 and Silver in self.deck.game.available_cards:
             Silver.buy(self.deck)
 
-    def choice(self, card: t.Type[Card], prompt: str, choices: t.List[t.Any]) -> t.Any:  # pylint: disable=unused-argument
+    def choice(
+        self, card: t.Type[Card], prompt: str, choices: t.List[t.Any]
+    ) -> t.Any:  # pylint: disable=unused-argument
         return random.choice(choices)
 
 

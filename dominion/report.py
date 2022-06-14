@@ -1,6 +1,6 @@
-from collections import defaultdict
 import functools
 import typing as t
+from collections import defaultdict
 
 from dominion.cards.card import Card
 from dominion.cards.curse import Curse
@@ -52,7 +52,11 @@ class Report:
             f"  - {card.name}: {count}" for card, count in self.game.supply.items()
         )
         decks = "\n".join(
-            f"  - [{player.player_id}]: {', '.join(f'{card.name}: {count}' for card, count in self.player_deck(player).items())}"
+            f"  - [{player.player_id}]: "
+            + ", ".join(
+                f"{card.name}: {count}"
+                for card, count in self.player_deck(player).items()
+            )
             for player in self.game.players
         )
         return (

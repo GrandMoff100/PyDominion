@@ -25,13 +25,11 @@ class Card:
         if cls in deck.game.kingdom_cards:
             if deck.game.kingdom_cards[cls] <= 0:
                 raise EmptySupplyPileError(f"Cannot buy a {cls.name}, none are left.")
-            else:
-                deck.game.kingdom_cards[cls] -= 1
+            deck.game.kingdom_cards[cls] -= 1
         elif cls in deck.game.base_cards:
             if deck.game.base_cards[cls] <= 0:
                 raise EmptySupplyPileError(f"Cannot buy a {cls.name}, none are left.")
-            else:
-                deck.game.base_cards[cls] -= 1
+            deck.game.base_cards[cls] -= 1
         if deck.coins >= cls.cost:
             deck.coins -= cls.cost
             deck.buys -= 1

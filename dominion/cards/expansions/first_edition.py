@@ -52,7 +52,11 @@ class Cellar(Action):
         deck.actions += 1
         cards: t.List[t.Type[Card]] = []
         for _ in deck.hand:
-            if card := deck.player.choice(cls, "What card would you like to discard? Press enter to stop.", deck.hand):
+            if card := deck.player.choice(
+                cls,
+                "What card would you like to discard? Press enter to stop.",
+                deck.hand,
+            ):
                 cards.append(card)
             else:
                 break
@@ -69,7 +73,9 @@ class Chapel(Action):
         """Trash up to 4 cards from your hand"""
         cards: t.List[t.Type[Card]] = []
         for i in range(1, 5):
-            if card := deck.player.choice(cls, f"[{i}/4] What card would you like to trash?", deck.hand):
+            if card := deck.player.choice(
+                cls, f"[{i}/4] What card would you like to trash?", deck.hand
+            ):
                 cards.append(card)
             else:
                 break
@@ -80,7 +86,6 @@ class Chapel(Action):
                 raise CardNotFoundError(
                     f"Cannot trash the {card.name}, it is not in your hand."
                 )
-        
 
 
 class Moat(Reaction):
