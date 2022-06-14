@@ -119,9 +119,7 @@ class Deck:
     @property
     def score(self):
         return sum(
-            [
-                card.points(self)
-                for card in self.cards
-                if issubclass(card, (Victory, Curse))
-            ]
+            card.points(self)
+            for card in self.cards
+            if issubclass(card, (Victory, Curse))
         )
