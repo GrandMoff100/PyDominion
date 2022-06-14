@@ -7,8 +7,8 @@ from dominion.cards.curse import Curse
 from dominion.cards.treasure import Copper, Silver, Treasure
 from dominion.cards.victory import Victory
 from dominion.deck import Deck
-from dominion.errors import CardNotFoundError, IllegalEffectError
-from dominion.player import Player, PlayerTypes
+from dominion.errors import CardNotFoundError
+from dominion.player import Player, Players
 
 __all__ = (
     "Cellar",
@@ -44,12 +44,18 @@ class Cellar(Action):
     cost: int = 2
 
     @classmethod
-    def effect(cls, deck: Deck, cards: t.List[Card]) -> None:
+    def effect(cls, deck: Deck) -> None:
         """
         +1 Action
         Discard any number of cards, then draw that many.
         """
         deck.actions += 1
+        cards: t.List[t.Type[Card]] = []
+        for _ in deck.hand:
+            if card := deck.player.choice(cls, "What card would you like to discard? Press enter to stop.", deck.hand):
+                cards.append(card)
+            else:
+                break
         deck.discard(cards)
         deck.draw(len(cards))
 
@@ -59,20 +65,22 @@ class Chapel(Action):
     cost: int = 2
 
     @classmethod
-    def effect(cls, deck: Deck, cards: t.List[Card]) -> None:
+    def effect(cls, deck: Deck) -> None:
         """Trash up to 4 cards from your hand"""
-        if len(cards) <= 4:
-            for card in cards:
-                if card in deck.hand:
-                    deck.trash(deck.hand.pop(deck.hand.index(card)))
-                else:
-                    raise CardNotFoundError(
-                        f"Cannot trash the {card.name}, it is not in your hand."
-                    )
-        else:
-            raise IllegalEffectError(
-                f"Cannot trash more than four cards with the {cls.name}"
-            )
+        cards: t.List[t.Type[Card]] = []
+        for i in range(1, 5):
+            if card := deck.player.choice(cls, f"[{i}/4] What card would you like to trash?", deck.hand):
+                cards.append(card)
+            else:
+                break
+        for card in cards:
+            if card in deck.hand:
+                deck.trash(deck.hand.pop(deck.hand.index(card)))
+            else:
+                raise CardNotFoundError(
+                    f"Cannot trash the {card.name}, it is not in your hand."
+                )
+        
 
 
 class Moat(Reaction):
@@ -87,13 +95,13 @@ class Moat(Reaction):
         deck.draw(2)
 
     @classmethod
-    def when_attack(cls, deck: Deck, card: t.Type[Card], targets: PlayerTypes) -> None:
+    def when_attack(cls, deck: Deck, card: t.Type[Card], targets: Players) -> None:
         """
         When another player plays an Attack card,
         you can first reveal this card and then be unaffected by it.
         """
         player = deck.game.get_player(deck)
-        if player.reveal(cls):
+        if player.deck.reveal(cls):
             targets.remove(player)
 
 
@@ -167,7 +175,7 @@ class Bureaucrat(Attack):
     cost: int = 4
 
     @classmethod
-    def effect(cls, deck: Deck) -> None:
+    def effect(cls, deck: Deck) -> None:  # type: ignore[override]
         """
         Gain a Silver onto your deck.
         Each other player reveals a Victory card from their hand and
@@ -177,7 +185,7 @@ class Bureaucrat(Attack):
         for player in deck.game.players:
             for card in player.deck.hand:
                 if issubclass(card, Victory):
-                    player.deck.insert(0, card)
+                    player.deck.draw_pile.insert(0, card)
                     break
 
 
@@ -196,7 +204,7 @@ class Militia(Attack):
     cost: int = 4
 
     @classmethod
-    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:
+    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:  # type: ignore[override]
         """
         +2 Coins
         Each other player discards down to 3 cards in their hand.
@@ -292,7 +300,7 @@ class Spy(Attack):
     cost: int = 4
 
     @classmethod
-    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:
+    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:  # type: ignore[override]
         """
         +1 Card
         +1 Action
@@ -308,8 +316,8 @@ class Spy(Attack):
                     player.choice(cls, f"Discard the {card.name}", ["Yes", "No"])
                     == "Yes"
                 ):
-                    player.deck.hand.append(player.deck.pop(i))
-                    player.deck.discard(card)
+                    player.deck.hand.append(player.deck.draw_pile.pop(i))
+                    player.deck.discard([card])
 
 
 class Thief(Attack):
@@ -317,7 +325,7 @@ class Thief(Attack):
     cost: int = 4
 
     @classmethod
-    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:
+    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:  # type: ignore[override]
         """
         Each other player reveals the top 2 cards of their deck.
         If they revealed any Treasure cards they trash one of them that you choose.
@@ -327,7 +335,7 @@ class Thief(Attack):
         for player in targets:
             choices = [
                 card
-                for card in enumerate(player.deck.draw_pile[0:2])
+                for card in player.deck.draw_pile[0:2]
                 if issubclass(card, Treasure)
             ]
             if choices:
@@ -336,7 +344,7 @@ class Thief(Attack):
                     "Which one of their Treasure cards do you want to trash?",
                     choices,
                 )
-                player.deck.remove(target_card)
+                player.deck.draw_pile.remove(target_card)
                 player.deck.trash(target_card)
                 if (
                     deck.player.choice(
@@ -502,7 +510,7 @@ class Witch(Attack):
     cost: int = 5
 
     @classmethod
-    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:
+    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:  # type: ignore[override]
         """
         +2 Cards
         Each other player gains a curse card.
@@ -522,7 +530,7 @@ class Adventurer(Action):
         Reveal cards from your deck until your reveal two Treasure cards.
         Put those Treasure cards in your hand and discard the other revealed cards.
         """
-        revealed_treasure_cards = []
+        revealed_treasure_cards: t.List[t.Type[Treasure]] = []
         while len(revealed_treasure_cards) < 2:
             card = deck.reveal(deck.draw()[0])
             if issubclass(card, Treasure):

@@ -1,9 +1,13 @@
 [tool.poetry]
 name = "PyDominion"
 version = "0.1.0"
-description = "Play the infamous medieval strategy game in Python!"
+description = "Play the infamous medieval deck-building strategy game in Python!"
 authors = ["Nate <minecraftcrusher100@gmail.com>"]
-license = "GPLv3"
+homepage = "https://github.com/GrandMoff100/PyDominion"
+license = "GPL-3.0-or-later"
+readme = "README.md"
+include = ["dominion/py.typed"]
+repository = "https://github.com/GrandMoff100/PyDominion"
 
 [tool.poetry.dependencies]
 python = "^3.8"

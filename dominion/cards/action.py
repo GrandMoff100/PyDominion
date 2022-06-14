@@ -4,15 +4,15 @@ from abc import abstractmethod
 
 from dominion.errors import NoActionsAvailableError
 
-from ..event import Event
-from .card import Card, KingdomCard
+from dominion.event import Event
+from dominion.cards.card import Card, KingdomCard
 
 if t.TYPE_CHECKING:
-    from ..deck import Deck
-    from ..player import PlayerTypes
+    from dominion.deck import Deck
+    from dominion.player import Players
 else:
     Deck = None  # pylint: disable=invalid-name
-    PlayerTypes = None  # pylint: disable=invalid-name
+    Players = None  # pylint: disable=invalid-name
 
 
 class Action(KingdomCard):
@@ -27,7 +27,7 @@ class Action(KingdomCard):
         print(deck.actions)
 
     @classmethod
-    def setup(cls, players: PlayerTypes) -> int:
+    def setup(cls, players: Players) -> int:
         """How many of a card type to start with depending on how many players."""
         return 10
 
@@ -60,7 +60,7 @@ class Reaction(Action):
 
     @classmethod
     @abstractmethod
-    def when_attack(cls, deck: Deck, card: t.Type[Card], targets: PlayerTypes) -> None:
+    def when_attack(cls, deck: Deck, card: t.Type[Card], targets: Players) -> None:
         """Abstract Reaction effects when a player plays an attack card."""
 
     @classmethod
@@ -72,7 +72,7 @@ class Reaction(Action):
 class Attack(Action):
     @classmethod
     def play(cls, deck: Deck) -> None:
-        super(Attack, Action).play(deck)
+        Action.play(deck)
         targets = copy.copy(deck.game.players)
         # Allows the current player to activate reaction cards.
         deck.game.dispatch_event(deck, Event.ATTACK_EVENT, cls, targets)
@@ -81,5 +81,5 @@ class Attack(Action):
 
     @classmethod
     @abstractmethod
-    def effect(cls, deck: Deck, targets: PlayerTypes) -> None:
+    def effect(cls, deck: Deck, targets: Players) -> None:  # type: ignore[override]
         """Abstract method for attack effects on players."""

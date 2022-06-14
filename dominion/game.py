@@ -1,5 +1,4 @@
 import inspect
-import io
 import sys
 import typing as t
 
@@ -9,8 +8,9 @@ from dominion.cards.curse import Curse
 from dominion.cards.treasure import Copper, Gold, Silver, Treasure
 from dominion.cards.victory import Duchy, Estate, Province
 from dominion.deck import Deck
+from dominion.errors import PlayerNotFoundError
 from dominion.event import Event
-from dominion.player import Player, PlayerTypes
+from dominion.player import Player, Players, PlayerTypes
 from dominion.report import Report
 
 
@@ -18,30 +18,30 @@ class Game:
     trash_pile: CardTypes
     kingdom_cards: t.Dict[t.Type[Card], int]
     base_cards: t.Dict[t.Type[Card], int]
-    players: t.List[Player]
-    game_output: io.FileIO
+    players: Players
+    game_output: t.TextIO
 
     def __init__(
         self,
         players: PlayerTypes,
         kingdom_card_set: CardTypes,
-        game_output: io.FileIO = sys.stdout,
+        game_output: t.TextIO = sys.stdout,
         log_events: bool = False,
     ):
         self.log_events = log_events
         self.game_output = game_output
         self.trash_pile = []
-        self.kingdom_cards = {card: card.setup(players) for card in kingdom_card_set}
+        self.players = [player(Deck(self)) for player in players]
+        self.out("[INIT] The players have been dealt!")
+        self.kingdom_cards = {card: card.setup(self.players) for card in kingdom_card_set}
         self.base_cards = {
-            card: card.setup(players)
+            card: card.setup(self.players)
             for card in [Copper, Silver, Gold, Estate, Duchy, Province, Curse]
         }
         self.out("[INIT] The Supply is setup!")
-        self.players = [player(Deck(self)) for player in players]
-        self.out("[INIT] The players have been dealt!")
 
     @property
-    def supply(self) -> t.Tuple[t.Tuple[Card, int], ...]:
+    def supply(self) -> t.Dict[t.Type[Card], int]:
         return dict(tuple(self.kingdom_cards.items()) + tuple(self.base_cards.items()))
 
     @property
@@ -54,11 +54,11 @@ class Game:
             card for card, count in self.kingdom_cards.items() if count == 0
         ]
 
-    def get_player(self, deck: Deck) -> t.Optional[Player]:
+    def get_player(self, deck: Deck) -> Player:
         for player in self.players:
             if player.deck == deck:
                 return player
-        return None
+        raise PlayerNotFoundError("This deck does not belong to a player!")
 
     def call_reaction_effect(
         self,
@@ -84,7 +84,7 @@ class Game:
                 f"Activate your {card.name} in response to the {card.name}?",
                 [True, False],
             ):
-                reaction_events[event](player.deck, card, *args, **kwargs)
+                reaction_events[event](player.deck, card, *args, **kwargs)  # type: ignore[operator]
 
     def dispatch_event(self, deck: Deck, event: Event, *args, **kwargs) -> None:
         for player in deck.game.players:
@@ -121,5 +121,5 @@ class Game:
 
     def out(self, *args, **kwargs) -> None:
         if self.log_events:
-            return print(*args, **kwargs, file=self.game_output)
+            return print(*args, **kwargs, file=self.game_output)  # type: ignore[arg-type]
         return None

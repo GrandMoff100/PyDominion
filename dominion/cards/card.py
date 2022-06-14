@@ -8,10 +8,10 @@ from dominion.errors import (
 
 if t.TYPE_CHECKING:
     from ..deck import Deck
-    from ..player import PlayerTypes
+    from ..player import Players
 else:
     Deck = None  # pylint: disable=invalid-name
-    PlayerTypes = None  # pylint: disable=invalid-name
+    Players = None  # pylint: disable=invalid-name
 
 
 class Card:
@@ -54,7 +54,7 @@ class Card:
         raise NotImplementedError
 
     @classmethod
-    def setup(cls, players: PlayerTypes) -> int:  # pylint: disable=unused-argument
+    def setup(cls, players: Players) -> int:  # pylint: disable=unused-argument
         """How many of a card type to start with depending on how many players."""
         return 0
 
@@ -65,7 +65,7 @@ class BaseCard(Card):  # pylint: disable=abstract-method
 
 class KingdomCard(Card):  # pylint: disable=abstract-method
     @classmethod
-    def setup(cls, players: PlayerTypes) -> int:
+    def setup(cls, players: Players) -> int:
         """How many of a card type to start with depending on how many players."""
         return 10
 

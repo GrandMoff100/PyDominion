@@ -103,7 +103,7 @@ class Deck:
         if card in self.hand:
             self.game.dispatch_event(self, Event.REVEAL_EVENT, card)
             self.game.log(
-                f"{self.game.get_player(self).player_id!r} revealed a {card.name}"
+                self, f"{self.game.get_player(self).player_id!r} revealed a {card.name}"
             )
             return card
         raise CardNotFoundError(f"Cannot reveal {card.name}, it is not in your hand.")
@@ -113,7 +113,7 @@ class Deck:
         self.discard_pile = []
 
     @property
-    def player(self) -> t.Optional[Player]:
+    def player(self) -> Player:
         return self.game.get_player(self)
 
     @property

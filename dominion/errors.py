@@ -32,3 +32,7 @@ class NoActionsAvailableError(ActionError):
 
 class CardNotFoundError(ActionError):
     pass
+
+
+class PlayerNotFoundError(DominionError):
+    pass

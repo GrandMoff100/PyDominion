@@ -5,10 +5,10 @@ from .card import BaseCard, Card, KingdomCard
 
 if t.TYPE_CHECKING:
     from ..deck import Deck
-    from ..player import PlayerTypes
+    from ..player import Players
 else:
     Deck = None  # pylint: disable=invalid-name
-    PlayerTypes = None  # pylint: disable=invalid-name
+    Players = None  # pylint: disable=invalid-name
 
 
 class Victory(Card):
@@ -17,7 +17,7 @@ class Victory(Card):
         return 0
 
     @classmethod
-    def setup(cls, players: PlayerTypes) -> int:
+    def setup(cls, players: Players) -> int:
         """How many of a card type to start with depending on how many players."""
         if issubclass(cls, KingdomCard):
             if len(players) <= 2:
@@ -35,7 +35,7 @@ class Estate(Victory, BaseCard):
         return 1
 
     @classmethod
-    def setup(cls, players: PlayerTypes) -> int:
+    def setup(cls, players: Players) -> int:
         """How many Estates to start with."""
         return 24
 
@@ -49,7 +49,7 @@ class Duchy(Victory, BaseCard):
         return 3
 
     @classmethod
-    def setup(cls, players: PlayerTypes) -> int:
+    def setup(cls, players: Players) -> int:
         """How many Duchys to start with."""
         return 12
 
@@ -63,6 +63,6 @@ class Province(Victory, BaseCard):
         return 6
 
     @classmethod
-    def setup(cls, players: PlayerTypes) -> int:
+    def setup(cls, players: Players) -> int:
         """How many Provinces to start with."""
         return 12

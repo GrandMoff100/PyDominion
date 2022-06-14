@@ -38,8 +38,8 @@ class Report:
         ]
 
     @staticmethod
-    def player_deck(player: Player) -> t.Dict[Card, int]:
-        total = defaultdict(int)
+    def player_deck(player: Player) -> t.Dict[t.Type[Card], int]:
+        total: t.Dict[t.Type[Card], int] = defaultdict(int)
         for card in player.deck.cards:
             total[card] += 1
         return dict(total)

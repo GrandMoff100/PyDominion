@@ -75,7 +75,7 @@ class Harbinger(Action):
             if chosen_card := deck.game.get_player(deck).choice(
                 cls,
                 "What card from your discard pile do you choose?",
-                deck.discard_pile + [None],
+                deck.discard_pile,
             ):
                 deck.discard_pile.remove(chosen_card)
                 deck.draw_pile.insert(0, chosen_card)
@@ -141,7 +141,7 @@ class Bandit(Attack):
     cost: int = 5
 
     @classmethod
-    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:
+    def effect(cls, deck: Deck, targets: t.List[Player]) -> None:  # type: ignore[override]
         """
         Gain a Gold.
         Each other player reveals the top two cards of their deck
@@ -151,12 +151,12 @@ class Bandit(Attack):
         deck.gain(Gold)
         for player in targets:
             for i, card in enumerate(player.deck.draw_pile[0:2]):
-                player.deck.pop(i)
+                player.deck.draw_pile.pop(i)
                 if issubclass(card, Treasure) and card != Copper:
                     player.deck.trash(card)
                 else:
-                    player.hand.append(card)
-                    player.discard([card])
+                    player.deck.hand.append(card)
+                    player.deck.discard([card])
 
 
 class Sentry(Action):

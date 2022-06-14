@@ -46,7 +46,7 @@ class Player:
         self.deck.coins = 0
         self.deck.buys = 1
 
-    def choice(self, prompt: str, choices: t.List[t.Any]) -> t.Any:
+    def choice(self, card: t.Optional[t.Type[Card]], prompt: str, choices: t.List[t.Any]) -> t.Any:
         raise NotImplementedError
 
 
@@ -58,9 +58,9 @@ class Human(Player):
             actions := [card for card in self.deck.hand if issubclass(card, Action)]
         ):
             if target_action := self.choice(
-                "Turn",
+                None,
                 f"Actions: {self.deck.actions}\nWhich Action card would you like to play?",
-                actions + [None],
+                actions,
             ):
                 target_action.play(self.deck)
             else:
@@ -69,20 +69,19 @@ class Human(Player):
     def buy_phase(self) -> None:
         while self.deck.buys > 0:
             if target_card := self.choice(
-                "Turn",
+                None,
                 f"Buys: {self.deck.buys}\nWhich card would you like to buy?",
                 [
                     card
                     for card in self.deck.game.available_cards
                     if card.cost <= self.deck.coins
-                ]
-                + [None],
+                ],
             ):
                 target_card.buy(self.deck)
             else:
                 break
 
-    def choice(self, card: t.Type[Card], prompt: str, choices: t.List[t.Any]) -> t.Any:
+    def choice(self, card: t.Optional[t.Type[Card]], prompt: str, choices: t.List[t.Any]) -> t.Any:
         choice_map = {choice_repr(choice).strip().lower(): choice for choice in choices}
         resp = input(
             f"[{self.player_id}] {choice_repr(card)}: {prompt} ({'/'.join(map(choice_repr, choices))}): "
@@ -92,4 +91,5 @@ class Human(Player):
         return None
 
 
+Players = t.List[Player]
 PlayerTypes = t.List[t.Type[Player]]

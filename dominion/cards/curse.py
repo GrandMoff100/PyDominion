@@ -4,9 +4,9 @@ from .card import BaseCard
 
 if t.TYPE_CHECKING:
     from ..deck import Deck
-    from ..player import PlayerTypes
+    from ..player import Players
 else:
-    PlayerTypes = None  # pylint: disable=invalid-name
+    Players = None  # pylint: disable=invalid-name
     Deck = None  # pylint: disable=invalid-name
 
 
@@ -18,7 +18,7 @@ class Curse(BaseCard):
         return -1
 
     @classmethod
-    def setup(cls, players: PlayerTypes) -> int:
+    def setup(cls, players: Players) -> int:
         """How many Curses to start with."""
         if len(players) <= 2:
             return 10
